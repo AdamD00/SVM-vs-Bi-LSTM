@@ -1,13 +1,15 @@
 from preprocessing import run_quota_preprocessing
 from model_svm import train_and_evaluate_svm, pd
 from model_bilstm import train_and_evaluate_bilstm
+from raport_generating import generuj_raport
 
 if __name__ == "__main__":
 
     stages = {
         "preprocessing" : True,
         "model_svm" : True,
-        "model_bilstm": True
+        "model_bilstm": True,
+        "raport" : True
     }
     print(stages)
     if stages["preprocessing"]:
@@ -34,7 +36,7 @@ if __name__ == "__main__":
             app_ids_list=TARGET_APP_IDS,
             input_folder=INPUT_DIR,
             output_folder=OUTPUT_DIR,
-            target_per_language=4000
+            target_per_language=2900
         )
     if stages["model_svm"]:
         PROCESSED_DATA_DIR = './processed_data/'
@@ -74,3 +76,5 @@ if __name__ == "__main__":
             print("=" * 50)
             df_results = pd.DataFrame(results)
             print(df_results.to_markdown(index=False, floatfmt=".4f"))
+    if stages["raport"]:
+        generuj_raport()
