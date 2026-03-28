@@ -1,26 +1,13 @@
 import os
 import re
 import pandas as pd
-import numpy as np
 from langdetect import detect, DetectorFactory
 from sklearn.model_selection import train_test_split
 
-# ==============================================================================
-# KONFIGURACJA POCZĄTKOWA
-# ==============================================================================
-# Zapewnia powtarzalność wyników detektora języka (kluczowe dla badań naukowych)
 DetectorFactory.seed = 42
 
 
-# ==============================================================================
-# FUNKCJE POMOCNICZE
-# ==============================================================================
-
 def get_language(text):
-    """
-    Bezpiecznie wykrywa język tekstu.
-    Zwraca kod ISO 639-1 (np. 'en', 'pl') lub 'unknown' w przypadku błędu.
-    """
     try:
         return detect(str(text))
     except:
@@ -28,13 +15,6 @@ def get_language(text):
 
 
 def clean_text(text):
-    """
-    Wykonuje podstawowe czyszczenie (preprocessing) tekstu recenzji.
-    - Zamienia wszystkie litery na małe.
-    - Usuwa tagi HTML.
-    - Usuwa interpunkcję i znaki specjalne (zostawia tylko alfanumeryczne i spacje).
-    - Usuwa wielokrotne spacje.
-    """
     text = str(text).lower()
     text = re.sub(r'<[^>]+>', ' ', text)
     text = re.sub(r'[^\w\s]', '', text)
@@ -42,166 +22,103 @@ def clean_text(text):
     return text
 
 
-def balance_dataset(df):
-    """
-    Wykonuje under-sampling, aby zbiór był idealnie zbalansowany.
-    Dla każdego języka w DataFrame wyrównuje liczbę recenzji pozytywnych (1)
-    do liczby recenzji negatywnych (0), losując odpowiednią ilość próbek z klasy większościowej.
-    """
-    balanced_dfs = []
+def run_quota_preprocessing(app_ids_list, input_folder, output_folder, target_per_language=3000):
+    print(f"=== ROZPOCZĘCIE ZBIERANIA DANYCH (CEL: {target_per_language} recenzji na język) ===")
 
-    for lang in df['language'].unique():
-        df_lang = df[df['language'] == lang]
-
-        positives = df_lang[df_lang['label'] == 1]
-        negatives = df_lang[df_lang['label'] == 0]
-
-        # Znajdujemy, której klasy jest mniej (wąskie gardło)
-        min_count = min(len(positives), len(negatives))
-        print(f"[{lang}] Balansowanie klas: pozostawiono {min_count} recenzji pozytywnych i {min_count} negatywnych.")
-
-        if min_count == 0:
-            print(f"[{lang}] UWAGA: Brak danych dla jednej z klas. Pomijanie języka.")
-            continue
-
-        # Losujemy próbki z obu klas, aby miały równą liczebność
-        pos_sampled = positives.sample(n=min_count, random_state=42)
-        neg_sampled = negatives.sample(n=min_count, random_state=42)
-
-        balanced_dfs.append(pd.concat([pos_sampled, neg_sampled]))
-
-    if balanced_dfs:
-        return pd.concat(balanced_dfs, ignore_index=True)
-    else:
-        return pd.DataFrame()
-
-
-# ==============================================================================
-# GŁÓWNA LOGIKA (PIPELINE)
-# ==============================================================================
-
-def run_preprocessing_pipeline(app_ids_list, input_folder, output_folder, sample_per_game=10000):
-    """
-    Główna funkcja orkiestrująca cały proces przygotowania danych.
-    1. Przeszukuje 'input_folder' w poszukiwaniu plików po AppID.
-    2. Pobiera próbkę recenzji, wykrywa język i filtruje EN/PL.
-    3. Czyści tekst i mapuje etykiety tekstowe na 1/0.
-    4. Balansuje klasy, dzieli na Train/Test i zapisuje do 'output_folder'.
-    """
-    print(f"=== ROZPOCZĘCIE PREPROCESSINGU DLA {len(app_ids_list)} GIER ===")
-
-    # Tworzenie folderu wyjściowego, jeśli nie istnieje
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    all_reviews = []
+    all_files = os.listdir(input_folder)
 
-    # Pobieramy listę wszystkich plików w folderze wejściowym
-    try:
-        all_files_in_folder = os.listdir(input_folder)
-    except FileNotFoundError:
-        print(f"[BŁĄD KRYTYCZNY] Folder wejściowy '{input_folder}' nie istnieje!")
-        return
+    # Koszyki na recenzje
+    pl_reviews = pd.DataFrame()
+    en_reviews = pd.DataFrame()
 
-    # KROK 1: EKSTRAKCJA I DETEKCJA JĘZYKA
     for app_id in app_ids_list:
-        # Szukamy pliku zaczynającego się od AppID i podkreślenia (np. "730_154320.csv")
-        matching_files = [f for f in all_files_in_folder if f.startswith(f"{app_id}_") and f.endswith('.csv')]
+        # Sprawdzamy, czy mamy już wystarczająco dużo danych
+        if len(pl_reviews) >= target_per_language and len(en_reviews) >= target_per_language:
+            print("\n[SUKCES] Osiągnięto wymagany limit dla obu języków! Zatrzymuję przeszukiwanie.")
+            break
 
+        matching_files = [f for f in all_files if f.startswith(f"{app_id}_") and f.endswith('.csv')]
         if not matching_files:
-            print(f"[UWAGA] Pominięto AppID: {app_id} - nie znaleziono pasującego pliku CSV.")
             continue
 
         game_file = matching_files[0]
         file_path = os.path.join(input_folder, game_file)
-
-        print(f"\nPrzetwarzanie pliku: {game_file} (AppID: {app_id})...")
+        print(f"\nSkanowanie pliku: {game_file}...")
 
         try:
-            # Wczytujemy plik CSV
             df = pd.read_csv(file_path)
-
-            # Weryfikacja wymaganych kolumn
             if 'review' not in df.columns or 'recommend' not in df.columns:
-                print(f"[BŁĄD] Plik {game_file} nie zawiera kolumn 'review' lub 'recommend'.")
                 continue
 
-            # Wybieramy tekst i ocenę, usuwamy puste wiersze
-            df = df[['review', 'recommend']].dropna(subset=['review', 'recommend'])
-
-            # Mapowanie etykiet: 'Recommended' -> 1, 'Not Recommended' -> 0
-            label_mapping = {'Recommended': 1, 'Not Recommended': 0}
-            df['label'] = df['recommend'].map(label_mapping)
-
-            # Usuwamy wiersze, gdzie mapowanie się nie powiodło (powstały wartości NaN)
+            df = df[['review', 'recommend']].dropna()
+            df['label'] = df['recommend'].map({'Recommended': 1, 'Not Recommended': 0})
             df = df.dropna(subset=['label'])
             df['label'] = df['label'].astype(int)
 
-            # Losowanie próby przed bardzo kosztowną czasowo detekcją języka
-            n_samples = min(sample_per_game, len(df))
+            # Aby nie wykrywać języka dla miliona wierszy, bierzemy próbkę np. 10 000
+            n_samples = min(10000, len(df))
             df_sampled = df.sample(n=n_samples, random_state=42).copy()
 
-            print(f" -> Detekcja języka dla próby {n_samples} recenzji (proszę czekać)...")
+            print(f" -> Detekcja języka ({n_samples} próbek)...")
             df_sampled['language'] = df_sampled['review'].apply(get_language)
 
-            # Zostawiamy wyłącznie recenzje angielskie ('en') i polskie ('pl')
-            df_filtered = df_sampled[df_sampled['language'].isin(['en', 'pl'])]
-            print(f" -> Wyodrębniono {len(df_filtered)} recenzji (EN/PL) dla tej gry.")
+            # Dodajemy znalezione polskie recenzje do koszyka
+            new_pl = df_sampled[df_sampled['language'] == 'pl']
+            pl_reviews = pd.concat([pl_reviews, new_pl])
 
-            all_reviews.append(df_filtered)
+            # Dodajemy znalezione angielskie recenzje do koszyka
+            new_en = df_sampled[df_sampled['language'] == 'en']
+            en_reviews = pd.concat([en_reviews, new_en])
+
+            print(
+                f" -> Stan koszyków: PL: {len(pl_reviews)}/{target_per_language} | EN: {len(en_reviews)}/{target_per_language}")
 
         except Exception as e:
-            print(f"[BŁĄD] Wystąpił problem podczas przetwarzania pliku {game_file}: {e}")
+            print(f"[BŁĄD] {e}")
 
-    # Sprawdzenie, czy udało się cokolwiek przetworzyć
-    if not all_reviews:
-        print("\n[ZAKOŃCZONO] Brak poprawnych danych do dalszego przetwarzania.")
-        return
+    # --- BALANSOWANIE I CZYSZCZENIE ---
+    print("\n=== Przycinanie, Balansowanie i Czyszczenie ===")
+    final_dfs = []
 
-    df_combined = pd.concat(all_reviews, ignore_index=True)
-    print(f"\n=== Zakończono ekstrakcję. Łączna liczba recenzji (EN+PL): {len(df_combined)} ===")
+    for lang, df_lang in [('pl', pl_reviews), ('en', en_reviews)]:
+        if len(df_lang) < target_per_language:
+            print(
+                f"[OSTRZEŻENIE] Zebrano tylko {len(df_lang)} recenzji dla języka {lang}. To może być za mało dla Bi-LSTM!")
 
-    # KROK 2: CZYSZCZENIE TEKSTU (NLP)
-    print("Rozpoczęto czyszczenie tekstu (usuwanie interpunkcji, formatowanie)...")
-    df_combined['cleaned_review'] = df_combined['review'].apply(clean_text)
+        # Przycinamy nadmiar, żeby było równo
+        df_lang = df_lang.head(target_per_language)
 
-    # Usuwamy recenzje, które po wyczyszczeniu stały się puste (np. zawierały same emotikony)
-    df_combined = df_combined[df_combined['cleaned_review'] != '']
+        # Balansujemy klasy w obrębie języka (np. 1500 pozytywów, 1500 negatywów)
+        positives = df_lang[df_lang['label'] == 1]
+        negatives = df_lang[df_lang['label'] == 0]
 
-    # KROK 3: BALANSOWANIE KLAS
-    print("\nRozpoczęto balansowanie klas (Under-sampling)...")
-    df_final = balance_dataset(df_combined)
+        min_class_count = min(len(positives), len(negatives))
+        print(f"[{lang.upper()}] Zbalansowano do {min_class_count} pozytywnych i {min_class_count} negatywnych.")
 
-    if df_final.empty:
-        print("[BŁĄD] Zbiór danych po balansowaniu jest pusty.")
-        return
-    # KROK 4: PODZIAŁ NA ZBIORY (TRAIN/TEST) I ZAPIS
-    print("\nRozpoczęto podział na zbiory treningowe (80%) i testowe (20%) oraz zapis...")
-    for lang in ['en', 'pl']:
-        df_lang = df_final[df_final['language'] == lang]
+        balanced_df = pd.concat([
+            positives.sample(n=min_class_count, random_state=42),
+            negatives.sample(n=min_class_count, random_state=42)
+        ])
 
-        if df_lang.empty:
-            print(f"[UWAGA] Brak danych do zapisu dla języka: {lang}")
-            continue
+        balanced_df['cleaned_review'] = balanced_df['review'].apply(clean_text)
+        balanced_df = balanced_df[balanced_df['cleaned_review'] != '']
+        final_dfs.append(balanced_df)
 
-        # Dzielimy cały DataFrame (df_lang), a nie tylko pojedyncze kolumny
-        df_train, df_test = train_test_split(
-            df_lang,
-            test_size=0.2,
-            random_state=42,
-            stratify=df_lang['label']
+    # --- ZAPIS ---
+    for df_lang in final_dfs:
+        if df_lang.empty: continue
+        lang = df_lang['language'].iloc[0]
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            df_lang['cleaned_review'], df_lang['label'], test_size=0.2, random_state=42, stratify=df_lang['label']
         )
 
-        # Zapisujemy wybrane kolumny: oryginał, wyczyszczona i etykieta
-        columns_to_save = ['review', 'cleaned_review', 'label']
+        pd.DataFrame({'review': X_train, 'cleaned_review': X_train, 'label': y_train}).to_csv(
+            f"{output_folder}/train_{lang}.csv", index=False)
+        pd.DataFrame({'review': X_test, 'cleaned_review': X_test, 'label': y_test}).to_csv(
+            f"{output_folder}/test_{lang}.csv", index=False)
 
-        train_file = os.path.join(output_folder, f'train_{lang}.csv')
-        test_file = os.path.join(output_folder, f'test_{lang}.csv')
-
-        df_train[columns_to_save].to_csv(train_file, index=False)
-        df_test[columns_to_save].to_csv(test_file, index=False)
-
-        print(f"Zapisano dane dla [{lang.upper()}]: {len(df_train)} treningowych, {len(df_test)} testowych.")
-
-
-    print("\n=== PREPROCESSING ZAKOŃCZONY SUKCESEM ===")
+        print(f"Zapisano gotowy zbiór {lang.upper()}: Train={len(X_train)}, Test={len(X_test)}")

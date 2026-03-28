@@ -1,4 +1,4 @@
-from preprocessing import run_preprocessing_pipeline
+from preprocessing import run_quota_preprocessing
 from model_svm import train_and_evaluate_svm, pd
 from model_bilstm import train_and_evaluate_bilstm
 
@@ -23,15 +23,18 @@ if __name__ == "__main__":
             '1551360', # Forza Horizon 5
             '1086940', # Baldurs Gate 3
             '990080', # Hogwart Legacy
-            '1774580' # Star Wars Jedi Survivor
-            #'534380' # Dying Light 2
-            #'1601580' # FrostPunk 2
+            '1774580', # Star Wars Jedi Survivor
+            '534380', # Dying Light 2
+            '1601580', # FrostPunk 2
+            '1363080', # Manor Lords
+            '1245620', # Elders Ring
+            '1966720', # Lethal Company
         ]
-        run_preprocessing_pipeline(
+        run_quota_preprocessing(
             app_ids_list=TARGET_APP_IDS,
             input_folder=INPUT_DIR,
             output_folder=OUTPUT_DIR,
-            sample_per_game=10000
+            target_per_language=4000
         )
     if stages["model_svm"]:
         PROCESSED_DATA_DIR = './processed_data/'

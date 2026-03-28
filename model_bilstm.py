@@ -145,7 +145,9 @@ def train_and_evaluate_bilstm(language, data_folder):
 
     print(f"Accuracy (Dokładność): {acc:.4f}")
     print(f"F1-Score (Macro):      {f1:.4f}")
-
+    #(Precision, Recall, F1 dla każdej klasy z osobna)
+    print("\nSzczegółowy raport klasyfikacji:")
+    print(classification_report(y_test, y_pred, target_names=['Negatywne (0)', 'Pozytywne (1)']))
     return {
         'Język': language.upper(),
         'Accuracy': acc,
