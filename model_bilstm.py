@@ -7,9 +7,9 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Embedding, Bidirectional, LSTM, Dense
 from sklearn.metrics import classification_report, accuracy_score, f1_score
 
-# ==============================================================================
+
 # HIPERPARAMETRY SIECI
-# ==============================================================================
+
 MAX_WORDS = 10000  # Rozmiar słownika (tyle samo co w SVM dla uczciwego porównania)
 MAX_SEQUENCE_LEN = 100  # Do ilu słów ucinamy/wydłużamy recenzję (tzw. padding)
 EMBEDDING_DIM = 64  # Rozmiar wektora osadzeń (jak bardzo złożone jest "zrozumienie" słowa)
@@ -18,9 +18,9 @@ EPOCHS = 5  # Ile razy model zobaczy cały zbiór danych podczas nauki
 BATCH_SIZE = 64  # Ile recenzji na raz model pakuje do pamięci RAM/VRAM
 
 
-# ==============================================================================
+
 # GŁÓWNA LOGIKA
-# ==============================================================================
+
 
 def train_and_evaluate_bilstm(language, data_folder):
     print(f"\n{'=' * 50}")
@@ -73,11 +73,10 @@ def train_and_evaluate_bilstm(language, data_folder):
     ])
 
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    model.summary()  # Wyświetli ładną tabelkę z architekturą
+    model.summary()
 
     # 4. Trening Modelu
     print(f"\nRozpoczęto trening (Epoki: {EPOCHS}, Batch: {BATCH_SIZE})...")
-    print("UWAGA: To potrwa ZNACZNIE dłużej niż SVM. Możesz iść zrobić kawę!")
 
     start_train_time = time.time()
 
@@ -107,10 +106,6 @@ def train_and_evaluate_bilstm(language, data_folder):
     infer_time = end_infer_time - start_infer_time
     infer_time_per_sample = (infer_time / len(y_test)) * 1000
 
-    # ==============================================================================
-    # NOWY BLOK: ANALIZA BŁĘDÓW DLA BI-LSTM (ERROR ANALYSIS)
-    # ==============================================================================
-    # Zbieramy wszystko do jednej tabeli, żeby łatwo to przeglądać w Excelu
     df_analysis = pd.DataFrame({
         'Wyczyszczona_Recenzja': X_test_text,
         'Faktyczna_Ocena': y_test,
@@ -147,10 +142,13 @@ def train_and_evaluate_bilstm(language, data_folder):
     print(f"F1-Score (Macro):      {f1:.4f}")
     #(Precision, Recall, F1 dla każdej klasy z osobna)
     print("\nSzczegółowy raport klasyfikacji:")
-    print(classification_report(y_test, y_pred, target_names=['Negatywne (0)', 'Pozytywne (1)']))
+    report_dict = classification_report(y_test, y_pred, output_dict=True)
+
     return {
         'Język': language.upper(),
         'Accuracy': acc,
+        'Precision': report_dict['macro avg']['precision'],
+        'Recall': report_dict['macro avg']['recall'],
         'F1-Score': f1,
         'Czas Treningu [s]': train_time,
         'Czas Inferencji [s]': infer_time

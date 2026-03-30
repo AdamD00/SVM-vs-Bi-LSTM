@@ -1,0 +1,139 @@
+=== ROZPOCZĘCIE ZBIERANIA DANYCH (CEL: 4000 recenzji na język) === 14 gier
+
+Skanowanie pliku: 1091500_26290.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 225/4000 | EN: 3367/4000
+
+Skanowanie pliku: 546560_92558.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 352/4000 | EN: 9254/4000
+
+Skanowanie pliku: 1145360_56360.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 453/4000 | EN: 13599/4000
+
+Skanowanie pliku: 782330_16517.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 601/4000 | EN: 18523/4000
+
+Skanowanie pliku: 2208920_26299.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 877/4000 | EN: 21811/4000
+
+Skanowanie pliku: 1551360_19640.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 1150/4000 | EN: 24677/4000
+
+Skanowanie pliku: 1086940_51540.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 1242/4000 | EN: 29635/4000
+
+Skanowanie pliku: 990080_293388.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 1478/4000 | EN: 33819/4000
+
+Skanowanie pliku: 1774580_56991.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 1609/4000 | EN: 40116/4000
+
+Skanowanie pliku: 534380_145768.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 2149/4000 | EN: 43561/4000
+
+Skanowanie pliku: 1601580_17303.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 2390/4000 | EN: 47913/4000
+
+Skanowanie pliku: 1363080_29010.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 2673/4000 | EN: 52607/4000
+
+Skanowanie pliku: 1245620_13770.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 2813/4000 | EN: 55679/4000
+
+Skanowanie pliku: 1966720_107656.csv...
+ -> Detekcja języka (10000 próbek)...
+ -> Stan koszyków: PL: 2961/4000 | EN: 60770/4000
+
+=== Przycinanie, Balansowanie i Czyszczenie ===
+[OSTRZEŻENIE] Zebrano tylko 2961 recenzji dla języka pl. To może być za mało dla Bi-LSTM!
+[PL] Zbalansowano do 273 pozytywnych i 273 negatywnych.
+[EN] Zbalansowano do 867 pozytywnych i 867 negatywnych.
+Zapisano gotowy zbiór PL: Train=436, Test=110
+Zapisano gotowy zbiór EN: Train=1387, Test=347
+
+==================================================
+URUCHAMIANIE MODELU SVM DLA JĘZYKA: [EN]
+==================================================
+Wczytano danych treningowych: 1387
+Wczytano danych testowych: 347
+--- RAPORT WYNIKÓW ---
+Accuracy (Dokładność): 0.8473
+F1-Score (Macro):      0.8473
+
+Szczegółowy raport klasyfikacji:
+               precision    recall  f1-score   support
+
+Negatywne (0)       0.85      0.84      0.85       174
+Pozytywne (1)       0.84      0.86      0.85       173
+
+     accuracy                           0.85       347
+    macro avg       0.85      0.85      0.85       347
+ weighted avg       0.85      0.85      0.85       347
+
+
+==================================================
+URUCHAMIANIE MODELU SVM DLA JĘZYKA: [PL]
+==================================================
+Wczytano danych treningowych: 436
+Wczytano danych testowych: 110
+
+--- RAPORT WYNIKÓW ---
+Accuracy (Dokładność): 0.7182
+F1-Score (Macro):      0.7180
+
+Szczegółowy raport klasyfikacji:
+               precision    recall  f1-score   support
+
+Negatywne (0)       0.71      0.75      0.73        55
+Pozytywne (1)       0.73      0.69      0.71        55
+
+     accuracy                           0.72       110
+    macro avg       0.72      0.72      0.72       110
+ weighted avg       0.72      0.72      0.72       110
+
+
+
+==================================================
+ZBIORCZE PODSUMOWANIE EKSPERYMENTU SVM
+==================================================
+| Język   |   Accuracy |   F1-Score |   Czas Treningu [s] |   Czas Inferencji [s] |
+|:--------|-----------:|-----------:|--------------------:|----------------------:|
+| EN      |     0.8473 |     0.8473 |              0.5323 |                0.1140 |
+| PL      |     0.7182 |     0.7180 |              0.0290 |                0.0057 |
+
+==================================================
+URUCHAMIANIE MODELU BI-LSTM DLA JĘZYKA: [EN]
+==================================================
+
+--- RAPORT WYNIKÓW BI-LSTM ---
+Accuracy (Dokładność): 0.7637
+F1-Score (Macro):      0.7634
+
+==================================================
+URUCHAMIANIE MODELU BI-LSTM DLA JĘZYKA: [PL]
+==================================================
+--- RAPORT WYNIKÓW BI-LSTM ---
+Accuracy (Dokładność): 0.6909
+F1-Score (Macro):      0.6893
+
+
+==================================================
+ZBIORCZE PODSUMOWANIE EKSPERYMENTU BI-LSTM
+==================================================
+| Język   |   Accuracy |   F1-Score |   Czas Treningu [s] |   Czas Inferencji [s] |
+|:--------|-----------:|-----------:|--------------------:|----------------------:|
+| EN      |     0.7637 |     0.7634 |              7.8577 |                0.6902 |
+| PL      |     0.6909 |     0.6893 |              4.9118 |                0.6911 |
+
