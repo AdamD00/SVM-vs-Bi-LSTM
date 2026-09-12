@@ -1,9 +1,9 @@
 import os
 
-from preprocessing import run_quota_preprocessing
+from preprocessing import run_quota_preprocessing, run_max_balanced_preprocessing, run_parallel_preprocessing
 from model_svm import train_and_evaluate_svm, pd
 from model_bilstm import train_and_evaluate_bilstm
-from raport_generating import generuj_raport
+from raport_generating import generuj_raport, wygeneruj_porownanie
 
 if __name__ == "__main__":
 
@@ -27,12 +27,12 @@ if __name__ == "__main__":
             '1551360', # Forza Horizon 5
             '1086940', # Baldur's Gate 3
             '990080',  # Hogwarts Legacy
-            '1774580', # Star Wars Jedi Survivor
+            '1774580', # Star Wars Jedi Survivor---- 1 odnotowany test
             '534380',  # Dying Light 2
             '1601580', # FrostPunk 2
             '1363080', # Manor Lords
             '1245620', # Elders Ring
-            '1966720', # Lethal Company
+            '1966720', # Lethal Company --- 2 odnotowany
             '1517290', # Battlefield 2042
             '1506830', # FIFA 22
             '1248130', # Farming Simulator 22
@@ -40,7 +40,7 @@ if __name__ == "__main__":
             '1139900', # Ghostrunner
             '892970',  # Valheim
             '1326470', # Sons Of The Forest
-            '261550',  # Mount & Blade II: Bannerlord
+            '261550',  # Mount & Blade II: Bannerlord -- 3 test
             '12210',   # Grand Theft Auto 4
             '239140',  # Dying Light
             '304390',  # For Honor
@@ -49,13 +49,15 @@ if __name__ == "__main__":
             '1971870', # Mortal Kombat 1
             '2357570', # Overwatch
             '1599340', # Lost ArK
-            '1468810', #Tale of immortal
+            '1468810', #Tale of immortal -4 test próba dostania 1500 recenzji na język oraz wynik (pozytywny/negatywny)
         ]
-        run_quota_preprocessing(
-            app_ids_list=TARGET_APP_IDS,
-            input_folder=INPUT_DIR,
-            output_folder=OUTPUT_DIR
-        )
+        # run_quota_preprocessing(
+        #     app_ids_list=TARGET_APP_IDS,
+        #     input_folder=INPUT_DIR,
+        #     output_folder=OUTPUT_DIR
+        # )
+        #run_max_balanced_preprocessing(INPUT_DIR,OUTPUT_DIR, neg_pl_limit=20000)
+        run_parallel_preprocessing(INPUT_DIR,OUTPUT_DIR, neg_pl_limit=20000)
     if stages["model_svm"]:
         PROCESSED_DATA_DIR = './processed_data/'
         results = []
@@ -98,3 +100,5 @@ if __name__ == "__main__":
             df_results.to_csv(os.path.join(PROCESSED_DATA_DIR, 'wyniki_bilstm.csv'), index=False)
     if stages["raport"]:
         generuj_raport()
+        wygeneruj_porownanie('pl')
+        wygeneruj_porownanie('en')

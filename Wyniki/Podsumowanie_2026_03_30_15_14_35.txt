@@ -7,7 +7,7 @@ CZĘŚĆ 1: ZESTAWIENIE DANYCH (DATASET)
 -----------------------------------------------------------------
 Łączna liczba przetworzonych recenzji: 5586
 
-Podział na języki (idealnie zbalansowane 50/50 pozytywne/negatywne):
+Podział na języki (zbalansowane 50/50 pozytywne/negatywne):
 - Język Polski (PL): 2586 recenzji
 - Język Angielski (EN): 3000 recenzji
 

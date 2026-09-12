@@ -62,7 +62,7 @@ def train_and_evaluate_bilstm(language, data_folder):
     # 3. Budowa Architektury Modelu
     print("Budowanie architektury Bi-LSTM...")
     model = Sequential([
-        # Warstwa Embedding: Zmienia cyfry w gęste wektory. To tutaj model uczy się znaczenia słów.
+        # Warstwa Embedding: Zmienia cyfry w gęste wektory.
         Embedding(input_dim=MAX_WORDS, output_dim=EMBEDDING_DIM, input_length=MAX_SEQUENCE_LEN),
 
         # Warstwa Bi-LSTM: Czyta tekst w obu kierunkach (lewo->prawo i prawo->lewo)
@@ -80,7 +80,7 @@ def train_and_evaluate_bilstm(language, data_folder):
 
     start_train_time = time.time()
 
-    # fit() uruchamia proces uczenia. Parametr validation_split pozwala monitorować przeuczenie.
+
     history = model.fit(
         X_train_pad, y_train,
         epochs=EPOCHS,
@@ -97,7 +97,7 @@ def train_and_evaluate_bilstm(language, data_folder):
     print("\nTrwa inferencja (przewidywanie na zbiorze testowym)...")
 
     start_infer_time = time.time()
-    y_pred_probs = model.predict(X_test_pad)  # Zwraca prawdopodobieństwa np. 0.82
+    y_pred_probs = model.predict(X_test_pad)
     end_infer_time = time.time()
 
     # Zamieniamy prawdopodobieństwo na twarde 0 lub 1 (próg = 0.5)
@@ -143,7 +143,7 @@ def train_and_evaluate_bilstm(language, data_folder):
     #(Precision, Recall, F1 dla każdej klasy z osobna)
     print("\nSzczegółowy raport klasyfikacji:")
     report_dict = classification_report(y_test, y_pred, output_dict=True)
-
+    df_analysis.to_csv(os.path.join(data_folder, f'predykcje_bilstm_{language}.csv'), index=False)
     return {
         'Język': language.upper(),
         'Accuracy': acc,

@@ -2,6 +2,50 @@ import os
 import pandas as pd
 from datetime import datetime
 
+def wygeneruj_porownanie(jezyk):
+    print(f"Generowanie porównania dla języka: {jezyk.upper()}...")
+    folder = './processed_data/'
+
+    plik_svm = os.path.join(folder, f'predykcje_svm_{jezyk}.csv')
+    plik_bilstm = os.path.join(folder, f'predykcje_bilstm_{jezyk}.csv')
+
+    if not os.path.exists(plik_svm) or not os.path.exists(plik_bilstm):
+        print(f"[BŁĄD] Brak plików z predykcjami dla języka {jezyk}.")
+        return
+
+    df_svm = pd.read_csv(plik_svm)
+    df_bilstm = pd.read_csv(plik_bilstm)
+
+    # Skoro zbiór testowy w obu modelach był podawany w tej samej kolejności,
+    # możemy je połączyć w jedną tabelę
+    df_zestawienie = pd.DataFrame({
+        'Recenzja': df_svm['Wyczyszczona_Recenzja'],
+        'Prawdziwa_Ocena': df_svm['Faktyczna_Ocena'],
+        'Ocena_SVM': df_svm['Przewidywanie_SVM'],
+        'Ocena_BiLSTM': df_bilstm['Przewidywanie_BiLSTM']
+    })
+
+    # Szukamy miejsc, gdzie modele się kłócą (jeden ma rację, a drugi się myli)
+    # Warunek: Prawdziwa ocena zgadza się z SVM, a nie zgadza z Bi-LSTM... LUB ODWROTNIE
+    df_roznice = df_zestawienie[df_zestawienie['Ocena_SVM'] != df_zestawienie['Ocena_BiLSTM']].copy()
+
+    df_roznice['Zwyciezca'] = df_roznice.apply(kto_mial_racje, axis=1)
+
+    # Pobieramy maksymalnie 100 losowych przypadków
+    ilosc_do_pobrania = min(100, len(df_roznice))
+    df_probka = df_roznice.sample(n=ilosc_do_pobrania, random_state=42)
+
+    plik_wynikowy = os.path.join(folder, f'porownanie_100_roznic_{jezyk}.csv')
+    df_probka.to_csv(plik_wynikowy, index=False, encoding='utf-8-sig')
+
+    print(f" -> Znaleziono {len(df_roznice)} różnic w ocenach pomiędzy modelami.")
+    print(f" -> Zapisano {ilosc_do_pobrania} przypadków do pliku: {plik_wynikowy}\n")
+
+def kto_mial_racje(row):
+    if row['Ocena_SVM'] == row['Prawdziwa_Ocena']:
+        return "SVM"
+    else:
+        return "Bi-LSTM"
 
 def policz_recenzje(katalog_danych, jezyk):
     """Zlicza recenzje z plików train i test dla danego języka."""
@@ -42,7 +86,7 @@ def generuj_raport():
     KATALOG_DANYCH = './processed_data/'
     data_wykonania = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data_wykonania_nazwa_pliku = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    PLIK_WYNIKOWY = f'Wyniki/Podsumowanie_Eksperymentu_{data_wykonania_nazwa_pliku}.txt'
+    PLIK_WYNIKOWY = f'Wyniki/Podsumowanie_{data_wykonania_nazwa_pliku}.txt'
 
     # Zliczanie danych
     liczba_pl = policz_recenzje(KATALOG_DANYCH, 'pl')

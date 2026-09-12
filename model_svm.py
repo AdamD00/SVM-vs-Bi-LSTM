@@ -87,7 +87,7 @@ def train_and_evaluate_svm(language, data_folder):
 
     df_errors.sample(min(50, len(df_errors)), random_state=42).to_csv(error_file, index=False)
     df_success.sample(min(50, len(df_success)), random_state=42).to_csv(success_file, index=False)
-
+    df_analysis.to_csv(os.path.join(data_folder, f'predykcje_svm_{language}.csv'), index=False)
     print(f"\nZapisano przykłady do analizy w folderze {data_folder}:")
     print(f" -> Zobacz plik: svm_bledy_{language}.csv (żeby zobaczyć, gdzie model poległ)")
 

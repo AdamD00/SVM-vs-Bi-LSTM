@@ -1,0 +1,51 @@
+=================================================================
+RAPORT Z EKSPERYMENTU BADAWCZEGO - ANALIZA SENTYMENTU
+Wygenerowano: 2026-04-16 13:53:23
+=================================================================
+
+CZĘŚĆ 1: ZESTAWIENIE DANYCH (DATASET)
+-----------------------------------------------------------------
+Łączna liczba przetworzonych recenzji: 71500
+
+Podział na języki (idealnie zbalansowane 50/50 pozytywne/negatywne):
+- Język Polski (PL): 35750 recenzji
+- Język Angielski (EN): 35750 recenzji
+
+
+CZĘŚĆ 2: WYNIKI MODELU KLASYCZNEGO (SVM + TF-IDF)
+-----------------------------------------------------------------
+[Język Angielski]
+- Dokładność (Accuracy): 84.80%
+- Precyzja (Precision):  84.81%
+- Czułość (Recall):      84.80%
+- Miara F1 (Macro):      84.80%
+- Czas treningu:         158.4189 s
+- Czas inferencji:       18.4191 s
+
+[Język Polski]
+- Dokładność (Accuracy): 85.87%
+- Precyzja (Precision):  85.89%
+- Czułość (Recall):      85.87%
+- Miara F1 (Macro):      85.87%
+- Czas treningu:         75.2582 s
+- Czas inferencji:       8.0245 s
+
+
+CZĘŚĆ 3: WYNIKI SIECI NEURONOWEJ (Bi-LSTM + Word Embeddings)
+-----------------------------------------------------------------
+[Język Angielski]
+- Dokładność (Accuracy): 82.39%
+- Precyzja (Precision):  82.48%
+- Czułość (Recall):      82.39%
+- Miara F1 (Macro):      82.38%
+- Czas treningu:         80.9999 s
+- Czas inferencji:       1.7264 s
+
+[Język Polski]
+- Dokładność (Accuracy): 84.28%
+- Precyzja (Precision):  84.39%
+- Czułość (Recall):      84.28%
+- Miara F1 (Macro):      84.27%
+- Czas treningu:         83.0455 s
+- Czas inferencji:       1.6362 s
+=================================================================
